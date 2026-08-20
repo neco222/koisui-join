@@ -4,46 +4,91 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VRChatを開く</title>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    #open {
+      display: inline-block;
+      padding: 16px 28px;
+      font-size: 18px;
+      text-decoration: none;
+      border: 1px solid #999;
+      border-radius: 8px;
+    }
+
+    #error {
+      color: red;
+      white-space: pre-wrap;
+    }
+  </style>
 </head>
 
 <body>
+
   <h1>VRChatを起動します</h1>
 
-  <button id="open">
+  <p>自動で起動しない場合はボタンを押してください。</p>
+
+  <a id="open" href="#">
     VRChatで参加
-  </button>
+  </a>
+
+  <p id="error"></p>
 
   <script>
-    const params = new URLSearchParams(location.search);
+    let vrchatUrl = null;
 
-    const id = params.get("id");
-    const shortName = params.get("shortName");
+    /*
+     * 形式1
+     *
+     * https://neco222.github.io/koisui-join/?vrchat://launch?ref=...
+     *
+     * ? より後ろを全部そのまま取得する。
+     */
+    const rawQuery = location.search.substring(1);
 
-    if (!id) {
-      document.body.innerHTML = "<h1>IDが指定されていません</h1>";
-      throw new Error("id missing");
+    if (rawQuery.startsWith("vrchat://")) {
+      vrchatUrl = rawQuery;
     }
 
-    let vrchatUrl =
-      "vrchat://launch?ref=vrchat.com&id=" +
-      encodeURIComponent(id);
+    /*
+     * 形式2
+     *
+     * https://neco222.github.io/koisui-join/?url=ENCODE済みURL
+     */
+    if (!vrchatUrl) {
+      const params = new URLSearchParams(location.search);
+      const url = params.get("url");
 
-    if (shortName) {
-      vrchatUrl +=
-        "&shortName=" +
-        encodeURIComponent(shortName);
+      if (url && url.startsWith("vrchat://")) {
+        vrchatUrl = url;
+      }
     }
 
-    vrchatUrl += "&attach=1";
+    if (!vrchatUrl) {
+      document.getElementById("error").textContent =
+        "VRChatリンクが指定されていません。";
 
-    document.getElementById("open").onclick = () => {
-      location.href = vrchatUrl;
-    };
+      document.getElementById("open").style.display = "none";
+    } else {
 
-    // 自動起動も試す
-    setTimeout(() => {
-      location.href = vrchatUrl;
-    }, 500);
+      console.log("VRChat URL:", vrchatUrl);
+
+      // 直接クリックできるリンクにする
+      const openButton = document.getElementById("open");
+      openButton.href = vrchatUrl;
+
+      // 自動起動も試す
+      setTimeout(() => {
+        window.location.href = vrchatUrl;
+      }, 700);
+    }
   </script>
+
 </body>
 </html>

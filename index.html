@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VRChatを開く</title>
+</head>
+
+<body>
+  <h1>VRChatを起動します</h1>
+
+  <button id="open">
+    VRChatで参加
+  </button>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+
+    const id = params.get("id");
+    const shortName = params.get("shortName");
+
+    if (!id) {
+      document.body.innerHTML = "<h1>IDが指定されていません</h1>";
+      throw new Error("id missing");
+    }
+
+    let vrchatUrl =
+      "vrchat://launch?ref=vrchat.com&id=" +
+      encodeURIComponent(id);
+
+    if (shortName) {
+      vrchatUrl +=
+        "&shortName=" +
+        encodeURIComponent(shortName);
+    }
+
+    vrchatUrl += "&attach=1";
+
+    document.getElementById("open").onclick = () => {
+      location.href = vrchatUrl;
+    };
+
+    // 自動起動も試す
+    setTimeout(() => {
+      location.href = vrchatUrl;
+    }, 500);
+  </script>
+</body>
+</html>

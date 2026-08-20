@@ -1,94 +1,602 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>VRChatを開く</title>
+  <title>Koisui Join</title>
 
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
     body {
-      font-family: sans-serif;
-      text-align: center;
-      padding: 40px 20px;
+      margin: 0;
+      width: 100%;
+      min-height: 100%;
+      font-family: "Segoe UI", "Noto Sans JP", sans-serif;
+      background: #004f55;
+      color: #dfffff;
+      overflow: hidden;
     }
 
-    #open {
-      display: inline-block;
-      padding: 16px 28px;
+    body {
+      position: relative;
+    }
+
+    /* 背景 */
+    .bg {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(115, 255, 255, 0.08), transparent 25%),
+        radial-gradient(circle at 80% 30%, rgba(115, 255, 255, 0.05), transparent 20%),
+        radial-gradient(circle at 50% 80%, rgba(115, 255, 255, 0.05), transparent 20%),
+        linear-gradient(180deg, #005c63 0%, #01474d 100%);
+    }
+
+    .bg::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(rgba(180, 255, 255, 0.10) 1px, transparent 1px);
+      background-size: 120px 120px;
+      opacity: 0.25;
+      animation: drift 20s linear infinite;
+    }
+
+    @keyframes drift {
+      from {
+        transform: translateY(0);
+      }
+
+      to {
+        transform: translateY(30px);
+      }
+    }
+
+    /* 左右の矢印 */
+    .side-arrow {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #00e8ef;
+      font-size: 64px;
+      font-weight: bold;
+      opacity: 0.8;
+      text-shadow: 0 0 12px rgba(0, 255, 255, 0.55);
+      user-select: none;
+      pointer-events: none;
+      z-index: 2;
+      animation: pulseArrow 1.5s ease-in-out infinite;
+    }
+
+    .side-arrow.left {
+      left: 5vw;
+    }
+
+    .side-arrow.right {
+      right: 5vw;
+    }
+
+    @keyframes pulseArrow {
+
+      0%,
+      100% {
+        opacity: 0.55;
+        transform: translateY(-50%) scale(1);
+      }
+
+      50% {
+        opacity: 1;
+        transform: translateY(-50%) scale(1.08);
+      }
+    }
+
+    /* 外側フレーム */
+    .outer-panel {
+      position: relative;
+      width: min(1200px, 88vw);
+      height: min(760px, 84vh);
+      margin: 4vh auto;
+      border-radius: 24px;
+      background: rgba(0, 10, 15, 0.72);
+      box-shadow:
+        inset 0 0 0 2px rgba(0, 255, 255, 0.06),
+        0 0 30px rgba(0, 0, 0, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+    }
+
+    /* Early Access */
+    .early-access {
+      position: absolute;
+      top: 28px;
+      right: -48px;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      padding: 16px 10px;
+      border: 4px solid rgba(194, 188, 72, 0.75);
+      border-radius: 999px;
+      color: rgba(194, 188, 72, 0.9);
       font-size: 18px;
-      text-decoration: none;
-      border: 1px solid #999;
-      border-radius: 8px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      background: rgba(50, 50, 0, 0.12);
     }
 
-    #error {
-      color: red;
-      white-space: pre-wrap;
+    /* 上タブ */
+    .top-tab {
+      position: absolute;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 18px;
+      border: 4px solid rgba(0, 255, 255, 0.45);
+      border-bottom: none;
+      border-radius: 14px 14px 0 0;
+      color: #d9ffff;
+      font-weight: 700;
+      font-size: 18px;
+      background: rgba(0, 88, 96, 0.6);
+      box-shadow: 0 0 18px rgba(0, 255, 255, 0.18);
+      z-index: 2;
+    }
+
+    /* 内側パネル */
+    .inner-panel {
+      width: min(760px, 70vw);
+      height: min(560px, 62vh);
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 50% 45%, rgba(53, 255, 255, 0.10), transparent 38%),
+        linear-gradient(180deg, rgba(0, 91, 99, 0.95), rgba(0, 86, 92, 0.95));
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+        0 0 40px rgba(0, 0, 0, 0.22);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* メイン */
+    .content {
+      width: 100%;
+      text-align: center;
+      padding: 24px;
+      position: relative;
+    }
+
+    /* 円 */
+    .circle-wrap {
+      position: relative;
+      width: 390px;
+      height: 390px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .glow-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      box-shadow:
+        0 0 20px rgba(49, 255, 255, 0.55),
+        0 0 45px rgba(49, 255, 255, 0.20),
+        inset 0 0 22px rgba(49, 255, 255, 0.16);
+      border: 4px solid rgba(82, 255, 255, 0.75);
+      opacity: 0.95;
+    }
+
+    .dashed-ring {
+      position: absolute;
+      inset: 22px;
+      border-radius: 50%;
+      border: 10px dashed rgba(96, 255, 255, 0.14);
+      animation: spinSlow 14s linear infinite;
+    }
+
+    .progress-ring {
+      position: absolute;
+      inset: 0;
+      transform: rotate(-90deg);
+      filter: drop-shadow(0 0 8px rgba(87, 255, 255, 0.7));
+    }
+
+    .progress-ring circle {
+      fill: none;
+      stroke-width: 8;
+      stroke-linecap: round;
+    }
+
+    .progress-bg {
+      stroke: rgba(130, 255, 255, 0.12);
+    }
+
+    .progress-bar {
+      stroke: #48f2ff;
+      stroke-dasharray: 1036;
+      stroke-dashoffset: 1036;
+      transition: stroke-dashoffset 0.4s linear;
+    }
+
+    @keyframes spinSlow {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* 波形 */
+    .wave-box {
+      position: absolute;
+      top: 78px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      text-align: center;
+      color: white;
+      font-weight: 700;
+    }
+
+    .wave-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 4px;
+      opacity: 0.95;
+    }
+
+    .wave-svg {
+      width: 100%;
+      height: 40px;
+      overflow: visible;
+      filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.35));
+    }
+
+    .wave-line {
+      fill: none;
+      stroke: white;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 300;
+      animation: waveDash 3s linear infinite;
+    }
+
+    @keyframes waveDash {
+      from {
+        stroke-dashoffset: 0;
+      }
+
+      to {
+        stroke-dashoffset: -40;
+      }
+    }
+
+    /* 文字 */
+    .main-title {
+      margin-top: 30px;
+      color: #0dc7da;
+      font-size: 54px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-shadow: 0 0 12px rgba(0, 255, 255, 0.15);
+    }
+
+    .message {
+      margin-top: 26px;
+      font-size: 18px;
+      color: #f4ffff;
+      font-weight: 700;
+      line-height: 1.5;
+      min-height: 56px;
+      padding: 0 24px;
+    }
+
+    .sub-message {
+      margin-top: 8px;
+      font-size: 14px;
+      color: rgba(220, 255, 255, 0.85);
+      min-height: 24px;
+    }
+
+    /* ボタン */
+    .action-btn {
+      margin-top: 26px;
+      min-width: 170px;
+      padding: 12px 26px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #eaffff;
+      background: rgba(0, 100, 110, 0.35);
+      border: 4px solid rgba(103, 255, 255, 0.45);
+      border-radius: 16px;
+      box-shadow:
+        0 0 10px rgba(0, 255, 255, 0.16),
+        inset 0 0 10px rgba(0, 255, 255, 0.08);
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .action-btn:hover {
+      transform: scale(1.03);
+      box-shadow:
+        0 0 18px rgba(0, 255, 255, 0.22),
+        inset 0 0 14px rgba(0, 255, 255, 0.10);
+    }
+
+    .action-btn:active {
+      transform: scale(0.98);
+    }
+
+    .countdown {
+      margin-top: 14px;
+      color: rgba(220, 255, 255, 0.85);
+      font-size: 14px;
+      min-height: 20px;
+    }
+
+    .error {
+      color: #ffffff;
+    }
+
+    .error .main-title {
+      color: #dffcff;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    /* フェード演出 */
+    .flash {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle, rgba(75, 255, 255, 0.28), transparent 40%);
+      pointer-events: none;
+      opacity: 0;
+      z-index: 20;
+    }
+
+    body.launching .flash {
+      animation: flashFx 0.8s ease forwards;
+    }
+
+    @keyframes flashFx {
+      0% {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+
+      40% {
+        opacity: 0.55;
+        transform: scale(1);
+      }
+
+      100% {
+        opacity: 0;
+        transform: scale(1.2);
+      }
+    }
+
+    @media (max-width: 900px) {
+      .outer-panel {
+        width: 94vw;
+        height: 90vh;
+      }
+
+      .inner-panel {
+        width: 86vw;
+        height: 66vh;
+      }
+
+      .circle-wrap {
+        width: 300px;
+        height: 300px;
+      }
+
+      .main-title {
+        font-size: 40px;
+      }
+
+      .wave-box {
+        top: 48px;
+        width: 170px;
+      }
+
+      .early-access {
+        display: none;
+      }
+
+      .side-arrow {
+        display: none;
+      }
     }
   </style>
 </head>
 
 <body>
 
-  <h1>VRChatを起動します</h1>
+  <div class="bg"></div>
 
-  <p>自動で起動しない場合はボタンを押してください。</p>
+  <div class="side-arrow left">««</div>
+  <div class="side-arrow right">»»</div>
 
-  <a id="open" href="#">
-    VRChatで参加
-  </a>
+  <div class="outer-panel">
+    <div class="top-tab">VRChatについて</div>
+    <div class="early-access">Early Access</div>
 
-  <p id="error"></p>
+    <div class="inner-panel">
+      <div class="content" id="content">
+        <div class="circle-wrap">
+          <div class="glow-ring"></div>
+          <div class="dashed-ring"></div>
+
+          <svg class="progress-ring" viewBox="0 0 360 360" width="390" height="390">
+            <circle class="progress-bg" cx="180" cy="180" r="165"></circle>
+            <circle class="progress-bar" id="progressBar" cx="180" cy="180" r="165"></circle>
+          </svg>
+
+          <div class="wave-box">
+            <div class="wave-labels">
+              <span>0%</span>
+              <span>100%</span>
+            </div>
+            <svg class="wave-svg" viewBox="0 0 200 40">
+              <path class="wave-line" d="M5 28
+                C18 28, 18 10, 32 10
+                C46 10, 46 33, 60 33
+                C74 33, 74 8, 88 8
+                C102 8, 102 28, 116 28
+                C130 28, 130 13, 144 13
+                C158 13, 158 27, 172 27
+                C184 27, 188 29, 195 29" />
+            </svg>
+          </div>
+
+          <div>
+            <div class="main-title" id="mainTitle">LOGIN</div>
+            <div class="message" id="message">
+              Connecting to VRChat instance...
+            </div>
+            <div class="sub-message" id="subMessage">
+              Please wait while the portal is being prepared.
+            </div>
+
+            <button class="action-btn" id="actionBtn">Cancel</button>
+            <div class="countdown" id="countdown"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flash"></div>
 
   <script>
     let vrchatUrl = null;
 
-    /*
-     * 形式1
-     *
-     * https://neco222.github.io/koisui-join/?vrchat://launch?ref=...
-     *
-     * ? より後ろを全部そのまま取得する。
-     */
+    // 形式1: ?vrchat://launch?...
     const rawQuery = location.search.substring(1);
-
     if (rawQuery.startsWith("vrchat://")) {
       vrchatUrl = rawQuery;
     }
 
-    /*
-     * 形式2
-     *
-     * https://neco222.github.io/koisui-join/?url=ENCODE済みURL
-     */
+    // 形式2: ?url=ENCODED
     if (!vrchatUrl) {
       const params = new URLSearchParams(location.search);
       const url = params.get("url");
-
       if (url && url.startsWith("vrchat://")) {
         vrchatUrl = url;
       }
     }
 
-    if (!vrchatUrl) {
-      document.getElementById("error").textContent =
-        "VRChatリンクが指定されていません。";
+    const progressBar = document.getElementById("progressBar");
+    const mainTitle = document.getElementById("mainTitle");
+    const message = document.getElementById("message");
+    const subMessage = document.getElementById("subMessage");
+    const actionBtn = document.getElementById("actionBtn");
+    const countdown = document.getElementById("countdown");
+    const content = document.getElementById("content");
 
-      document.getElementById("open").style.display = "none";
-    } else {
+    const radius = 165;
+    const circumference = 2 * Math.PI * radius;
 
-      console.log("VRChat URL:", vrchatUrl);
+    function setProgress(percent) {
+      const offset = circumference - (percent / 100) * circumference;
+      progressBar.style.strokeDashoffset = offset;
+    }
 
-      // 直接クリックできるリンクにする
-      const openButton = document.getElementById("open");
-      openButton.href = vrchatUrl;
+    function setLaunchMode() {
+      mainTitle.textContent = "LOGIN";
+      message.innerHTML = "Logging in via VRChat Portal";
+      subMessage.textContent = "Instance link detected. Preparing launch...";
+      actionBtn.textContent = "Cancel";
+    }
 
-      // 自動起動も試す
+    function setErrorMode(detail) {
+      content.classList.add("error");
+      mainTitle.textContent = "エラー";
+      message.innerHTML = "ログインできませんでした:<br>" + detail;
+      subMessage.textContent = "";
+      actionBtn.textContent = "OK";
+      countdown.textContent = "";
+      setProgress(100);
+    }
+
+    function launchEffect() {
+      document.body.classList.add("launching");
+      setTimeout(() => {
+        document.body.classList.remove("launching");
+      }, 900);
+    }
+
+    // ボタン挙動
+    actionBtn.addEventListener("click", () => {
+      if (!vrchatUrl) {
+        location.href = "https://vrchat.com/home";
+        return;
+      }
+
+      launchEffect();
+
       setTimeout(() => {
         window.location.href = vrchatUrl;
-      }, 700);
+      }, 250);
+    });
+
+    // 初期表示
+    setProgress(0);
+
+    if (!vrchatUrl) {
+      setErrorMode("VRChatリンクが指定されていません。");
+    } else {
+      setLaunchMode();
+
+      let progress = 0;
+      let remaining = 3;
+      countdown.textContent = "Launching in " + remaining + "...";
+
+      const timer = setInterval(() => {
+        progress += 100 / 30;
+        if (progress > 100) progress = 100;
+        setProgress(progress);
+      }, 100);
+
+      const countdownTimer = setInterval(() => {
+        remaining--;
+        if (remaining > 0) {
+          countdown.textContent = "Launching in " + remaining + "...";
+        } else {
+          countdown.textContent = "Launching now...";
+          clearInterval(countdownTimer);
+        }
+      }, 1000);
+
+      setTimeout(() => {
+        clearInterval(timer);
+        setProgress(100);
+        launchEffect();
+
+        setTimeout(() => {
+          window.location.href = vrchatUrl;
+        }, 250);
+      }, 3000);
     }
   </script>
-
 </body>
+
 </html>
